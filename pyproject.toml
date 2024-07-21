@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "image-annotation-gui"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Jude", email = "judecapachietti@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "pydantic",
+  "dash",
+  "pandas",
+  "scikit-image",
+]
+
+[project.urls]
+Documentation = "https://github.com/Jude/image-annotation-gui#readme"
+Issues = "https://github.com/Jude/image-annotation-gui/issues"
+Source = "https://github.com/Jude/image-annotation-gui"
+
+[tool.hatch.version]
+path = "src/image_annotation_gui/__about__.py"
+
+[tool.hatch.envs.default.scripts]
+start = "python src/image_annotation_gui/main.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/image_annotation_gui tests}"
+
+[tool.coverage.run]
+source_pkgs = ["image_annotation_gui", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/image_annotation_gui/__about__.py",
+]
+
+[tool.coverage.paths]
+image_annotation_gui = ["src/image_annotation_gui", "*/image-annotation-gui/src/image_annotation_gui"]
+tests = ["tests", "*/image-annotation-gui/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
