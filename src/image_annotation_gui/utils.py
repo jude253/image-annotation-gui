@@ -59,7 +59,7 @@ class ImageAnnotationBuilder(BaseModel):
         self.image_annotations = []
         self.image_names = []
 
-        for image_path in image_paths:
+        for image_path in sorted(image_paths):
             image_dir, image_file_name = image_path
             annotation_file_name = image_file_name.split('.')[0] + '.json'
             image_annotation = ImageAnnotation(

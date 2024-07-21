@@ -1,8 +1,7 @@
 import plotly.express as px
 from dash import Dash, dcc, html, Input, Output, no_update, callback
-from skimage import io
 import json
-
+import cv2
 from image_annotation_gui.utils import create_image_annotation_builder
 
 
@@ -21,11 +20,15 @@ the user that the page is loading would be nice.  I imagine it will be
 even slower with larger image files.
 '''.split())
 
+def get_img_fig(img_path):
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    fig = px.imshow(img)
+    fig.update_layout(dragmode="drawrect")
+    return fig
 
 image_annotation_builder = create_image_annotation_builder()
-img = io.imread(image_annotation_builder.current_image_annotation.image_full_path)
-fig = px.imshow(img)
-fig.update_layout(dragmode="drawrect")
+fig = get_img_fig(image_annotation_builder.current_image_annotation.image_full_path)
 
 app = Dash(__name__)
 app.layout = html.Div(
@@ -57,9 +60,7 @@ def update_output(value):
 def update_output(value):
     image_annotation = image_annotation_builder.get_image_annotation_from_name(value)
     image_annotation_builder.current_image_annotation = image_annotation
-    img = io.imread(image_annotation.image_full_path)
-    fig = px.imshow(img)
-    fig.update_layout(dragmode="drawrect")
+    fig = get_img_fig(image_annotation.image_full_path)
     return fig
 
 

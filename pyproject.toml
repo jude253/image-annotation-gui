@@ -25,7 +25,7 @@ dependencies = [
   "pydantic",
   "dash",
   "pandas",
-  "scikit-image",
+  "opencv-python-headless"
 ]
 
 [project.urls]
