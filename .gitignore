@@ -3,5 +3,8 @@ dist/
 *__pycache__*
 
 image_data/*
+coco_format_data/*
+!**README.md
 
-!image_data/README.md
+*.DS_Store*
+local/

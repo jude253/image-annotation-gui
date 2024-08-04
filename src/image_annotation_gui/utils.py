@@ -12,28 +12,37 @@ opencv_supported_formats = [
     ".webp",
 ]
 
-def find_image_data_dir_path():
+
+def find_dir_path(find_dir_name):
     cwd = os.getcwd()
 
     for root, dirs, files in os.walk(cwd):
         for dir_name in dirs:
             dir_path = os.path.join(root, dir_name)
-            if 'image_data' in dir_path:
+            if find_dir_name in dir_path:
                 return dir_path
 
 
+def is_image_file(file_path):
+    return any([
+        file_path.lower().endswith(img_ext) 
+        for img_ext in opencv_supported_formats
+    ])
+
+
+def is_json_file(file_path):
+    return file_path.lower().endswith('.json') 
+
+
 def get_list_of_image_paths():
-    image_data_dir_path = find_image_data_dir_path()
+    image_data_dir_path = find_dir_path('image_data')
     image_paths = []
 
     for root, dirs, files in os.walk(image_data_dir_path):
         for file_name in files:
             full_file_path = os.path.join(root, file_name)
 
-            if any([
-                full_file_path.lower().endswith(img_ext) 
-                for img_ext in opencv_supported_formats
-            ]):
+            if is_image_file(full_file_path):
                 image_paths.append((root, file_name))
     
     return image_paths
@@ -42,11 +51,23 @@ def get_list_of_image_paths():
 class ImageAnnotation(BaseModel):
     image_full_path: str
     image_file_name: str
-    annotation_file_full_path: Optional[str]
+    layout_shapes_data_file_full_path: Optional[str]
+    layout_shapes_data: Optional[dict]
 
-    def write_annotation_file(self, write_json):
-        with open(self.annotation_file_full_path, 'w') as f:
-            f.write(json.dumps(write_json, indent=2, default=str))
+    def write_layout_shapes_data_file(self):
+        with open(self.layout_shapes_data_file_full_path, 'w') as f:
+            f.write(json.dumps(self.layout_shapes_data, indent=2, default=str))
+    
+    def get_existing_layout_shapes_data_from_file(self):
+        if os.path.exists(self.layout_shapes_data_file_full_path):
+            with open(self.layout_shapes_data_file_full_path, 'r') as f:
+                file_contents = f.read()
+                # print(file_contents)
+                self.layout_shapes_data = json.loads(file_contents)
+
+    def update_layout_shapes_data(self, new_layout_shapes_data):
+        self.layout_shapes_data = new_layout_shapes_data
+
 
     
 
@@ -65,8 +86,10 @@ class ImageAnnotationBuilder(BaseModel):
             image_annotation = ImageAnnotation(
                 image_full_path=os.path.join(image_dir, image_file_name),
                 image_file_name=image_file_name,
-                annotation_file_full_path=os.path.join(image_dir, annotation_file_name),
+                layout_shapes_data_file_full_path=os.path.join(image_dir, annotation_file_name),
+                layout_shapes_data=None
             )
+            image_annotation.get_existing_layout_shapes_data_from_file()
 
             self.image_annotations.append(image_annotation)
             self.image_names.append(image_file_name)

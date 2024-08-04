@@ -17,4 +17,4 @@ def test_image_annotation_builder():
     for imageAnnotation in imageAnnotationBuilder.image_annotations:
         assert test_image_dir in imageAnnotation.image_full_path
         assert imageAnnotation.image_file_name.endswith('.png')
-        assert imageAnnotation.annotation_file_full_path.endswith('.json')
+        assert imageAnnotation.layout_shapes_data_file_full_path.endswith('.json')
