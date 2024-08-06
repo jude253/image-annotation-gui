@@ -48,14 +48,18 @@ def get_list_of_image_paths():
     return image_paths
 
 
-def get_coco_data_root_dir(data_parent_folder=''):
+def get_coco_data_set_dir(data_set_name, data_set_parent_folder=''):
     coco_root = find_dir_path('coco_format_data')
-    data_dir = os.path.join(coco_root, data_parent_folder, 'data')
+    data_set_dir = os.path.join(coco_root, data_set_parent_folder, data_set_name)
 
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
+    # Apparently the folder expected is `images` not `data`
+    # https://github.com/google-ai-edge/mediapipe/blob/master/mediapipe/model_maker/python/vision/object_detector/dataset.py#L29-L88
+    images_dir = os.path.join(data_set_dir, 'images')
 
-    return data_dir
+    if not os.path.exists(images_dir):
+        os.makedirs(images_dir)
+
+    return data_set_dir
         
 
 class Category(BaseModel):
@@ -119,7 +123,7 @@ class LabelsJson(BaseModel):
         
         if category_id is None:
             new_category = Category(
-                id=len(self.categories),
+                id=len(self.categories)+1,  # 0 is reserved!
                 name=category_name
             )
             self.categories.append(new_category)
@@ -137,11 +141,11 @@ class LabelsJson(BaseModel):
             "annotations": [a.__dict__ for a in self.annotations],
         })
     
-    def write_file(self, data_parent_folder=''):
-        data_dir = get_coco_data_root_dir(data_parent_folder=data_parent_folder)
-        label_json_file_path = os.path.join(data_dir, 'label.json')
+    def write_file(self, data_set_name, data_set_parent_folder=''):
+        data_dir = get_coco_data_set_dir(data_set_name, data_set_parent_folder=data_set_parent_folder)
+        labels_json_file_path = os.path.join(data_dir, 'labels.json')
 
-        with open(label_json_file_path, 'w') as file:
+        with open(labels_json_file_path, 'w') as file:
             file.write(self.to_json())
 
 
@@ -170,7 +174,7 @@ class ImageAnnotationBuilder(BaseModel):
     image_annotations: List[ImageAnnotation] | None = None
     image_names: list[str] | None = None
     current_image_annotation: ImageAnnotation | None = None
-    label_json: LabelsJson | None = None
+    labels_json: LabelsJson | None = None
     
     def setupImageAnnoations(self, image_paths):
         self.image_annotations = []
@@ -199,8 +203,8 @@ class ImageAnnotationBuilder(BaseModel):
         
         return None
     
-    def set_label_json(self):
-        label_json = LabelsJson(
+    def set_labels_json(self):
+        labels_json = LabelsJson(
             categories=[],
             images=[],
             annotations=[]
@@ -223,32 +227,32 @@ class ImageAnnotationBuilder(BaseModel):
                     h=h
                 )
                 category_name = layout_shape['label']['text']
-                category_id = label_json.get_category_id(category_name)
-                image_id = label_json.get_image_id(image_annotation.image_file_name)
+                category_id = labels_json.get_category_id(category_name)
+                image_id = labels_json.get_image_id(image_annotation.image_file_name)
                 annotation = Annotation(
-                    id=len(label_json.annotations),
+                    id=len(labels_json.annotations),
                     image_id=image_id,
                     category_id=category_id,
                     bbox=bbox.to_list()
                 )
-                label_json.add_annotation(annotation)
-        self.label_json = label_json
+                labels_json.add_annotation(annotation)
+        self.labels_json = labels_json
 
-    def create_coco_format_data_archive(self, data_parent_folder=''):
+    def create_coco_format_data_archive(self, data_set_name, data_set_parent_folder=''):
         """
         Create a zip file of the coco format data
         """
-        data_dir = get_coco_data_root_dir(data_parent_folder=data_parent_folder)
-        self.set_label_json()
-        self.label_json.write_file(data_parent_folder=data_parent_folder)
+        data_set_dir = get_coco_data_set_dir(data_set_name, data_set_parent_folder=data_set_parent_folder)
+        self.set_labels_json()
+        self.labels_json.write_file(data_set_name, data_set_parent_folder=data_set_parent_folder)
 
         for image_annotation in self.image_annotations:
             old_image_file_path = image_annotation.image_full_path
-            new_image_file_path = os.path.join(data_dir, image_annotation.image_file_name)
+            new_image_file_path = os.path.join(data_set_dir, 'images', image_annotation.image_file_name)
             shutil.copyfile(old_image_file_path, new_image_file_path)
 
-        shutil.make_archive(data_dir, 'zip', data_dir)
-        shutil.rmtree(data_dir)
+        shutil.make_archive(data_set_dir, 'zip', data_set_dir)
+        shutil.rmtree(data_set_dir)
 
 
 def create_image_annotation_builder():
