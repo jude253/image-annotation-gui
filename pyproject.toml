@@ -38,6 +38,7 @@ path = "src/image_annotation_gui/__about__.py"
 
 [tool.hatch.envs.default.scripts]
 start = "python src/image_annotation_gui/main.py"
+coco = "python src/image_annotation_gui/transform_to_coco_format.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
